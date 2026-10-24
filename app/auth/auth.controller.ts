@@ -1,0 +1,51 @@
+import { Request, Response } from 'express';
+import { AuthService } from './auth.service';
+
+export class AuthController {
+  private authService = new AuthService();
+
+  async login(req: Request, res: Response): Promise<void> {
+    const { username, password } = req.body;
+    const tokens = await this.authService.authenticate(username, password);
+
+    if (!tokens) {
+      res.status(401).json({ message: 'Invalid credentials' });
+      return;
+    }
+
+    res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+    res.status(200).json(tokens);
+  }
+
+  async refresh(req: Request, res: Response): Promise<void> {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
+    const tokens = await this.authService.refresh(refreshToken);
+
+    if (!tokens) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
+    res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+    res.status(200).json(tokens);
+  }
+
+  async logout(req: Request, res: Response): Promise<void> {
+    const refreshToken = req.cookies?.refreshToken;
+    if (refreshToken) {
+      await this.authService.logout(refreshToken);
+    }
+
+    res.clearCookie('accessToken');
+    res.clearCookie('refreshToken');
+    res.status(204).send();
+  }
+}
