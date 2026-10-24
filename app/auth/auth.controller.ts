@@ -1,10 +1,17 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
+import { rateLimiter } from '../middleware/rate_limiter';
 
 export class AuthController {
   private authService = new AuthService();
 
   async login(req: Request, res: Response): Promise<void> {
+    await new Promise<void>((resolve) => {
+      rateLimiter(req, res, () => resolve());
+    });
+
+    if (res.headersSent) return;
+
     const { username, password } = req.body;
     const tokens = await this.authService.authenticate(username, password);
 
@@ -19,6 +26,12 @@ export class AuthController {
   }
 
   async refresh(req: Request, res: Response): Promise<void> {
+    await new Promise<void>((resolve) => {
+      rateLimiter(req, res, () => resolve());
+    });
+
+    if (res.headersSent) return;
+
     const refreshToken = req.cookies?.refreshToken;
 
     if (!refreshToken) {
