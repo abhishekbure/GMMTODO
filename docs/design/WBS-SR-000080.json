@@ -1,0 +1,76 @@
+{
+  "work_ref": "SR-000080",
+  "contracts": [
+    {
+      "id": "AUTH-API",
+      "kind": "openapi",
+      "path": "contracts/openapi/auth.yaml"
+    },
+    {
+      "id": "AUDIT-SCHEMA",
+      "kind": "schema_plan",
+      "path": "contracts/schema/audit-log-plan.md"
+    }
+  ],
+  "items": [
+    {
+      "id": "GMM-US-001-005",
+      "role": "developer",
+      "title": "Implement JWT generation and validation utility",
+      "paths": ["app/auth/jwt.util.ts"],
+      "contracts": [],
+      "ac": ["AC-JWT-01", "AC-JWT-02", "AC-JWT-03", "AC-JWT-04"]
+    },
+    {
+      "id": "GMM-US-001-Service",
+      "role": "developer",
+      "title": "Implement Authentication Service logic",
+      "paths": ["app/auth/auth.service.ts"],
+      "contracts": [],
+      "depends_on": ["GMM-US-001-005"],
+      "ac": ["AC-AUTH-01", "AC-AUTH-02"]
+    },
+    {
+      "id": "GMM-US-002-004-006",
+      "role": "developer",
+      "title": "Expose Auth Endpoints (Login, Refresh, Logout)",
+      "paths": ["app/auth/auth.controller.ts"],
+      "contracts": ["AUTH-API"],
+      "depends_on": ["GMM-US-001-005", "GMM-US-001-Service"],
+      "ac": ["AC-API-01", "AC-API-02", "AC-API-03", "AC-API-04", "AC-API-05"]
+    },
+    {
+      "id": "GMM-US-006-Middleware",
+      "role": "developer",
+      "title": "Implement Authentication Middleware",
+      "paths": ["app/auth/auth.middleware.ts"],
+      "contracts": [],
+      "depends_on": ["GMM-US-001-005"],
+      "ac": ["AC-MID-01", "AC-MID-02", "AC-MID-03"]
+    },
+    {
+      "id": "GMM-EP-RL",
+      "role": "developer",
+      "title": "Implement IP-based Rate Limiting",
+      "paths": ["app/middleware/rate_limiter.ts"],
+      "contracts": [],
+      "ac": ["AC-RL-01"]
+    },
+    {
+      "id": "GMM-US-007-008",
+      "role": "developer",
+      "title": "Implement AuditLog Schema and Immutability",
+      "paths": [
+        "app/audit/audit.schema.ts",
+        "app/audit/audit.service.ts"
+      ],
+      "contracts": ["AUDIT-SCHEMA"],
+      "ac": ["AC-AUDIT-01", "AC-AUDIT-02"]
+    }
+  ],
+  "critical_modules": ["app/auth", "app/audit"],
+  "nfr": {
+    "performance": "auth API p95 < 300ms",
+    "security": "httpOnly cookies, rate limiting, immutable audit logs"
+  }
+}

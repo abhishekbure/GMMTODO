@@ -1,0 +1,37 @@
+
+import jwt from 'jsonwebtoken';
+import { Request, Response } from 'express';
+
+export interface TokenPair {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface LoginRequest {
+  username: string;
+  password: string;
+}
+
+export class JwtUtil {
+  private static readonly ACCESS_TOKEN_TTL = '15m';
+  private static readonly REFRESH_TOKEN_TTL = '7d';
+  private static readonly SECRET = process.env.JWT_SECRET || 'super-secret-key';
+
+  static generateTokenPair(payload: any): TokenPair {
+    const accessToken = jwt.sign(payload, this.SECRET, { expiresIn: this.ACCESS_TOKEN_TTL });
+    const refreshToken = jwt.sign(payload, this.SECRET, { expiresIn: this.REFRESH_TOKEN_TTL });
+    return { accessToken, refreshToken };
+  }
+
+  static verifyToken(token: string): any {
+    try {
+      return jwt.verify(token, this.SECRET);
+    } catch (error) {
+      return null;
+    }
+  }
+
+  static decodeToken(token: string): any {
+    return jwt.decode(token);
+  }
+}

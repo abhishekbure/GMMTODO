@@ -1,0 +1,51 @@
+openapi: 3.0.0
+info:
+  title: Authentication API
+  version: 1.0.0
+paths:
+  /api/v1/auth/login:
+    post:
+      summary: User login
+      responses:
+        '200':
+          description: Successful login
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '401':
+          description: Unauthorized
+  /api/v1/auth/refresh:
+    post:
+      summary: Refresh session
+      responses:
+        '200':
+          description: Token refresh successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenPair'
+        '403':
+          description: Forbidden (expired refresh token)
+  /api/v1/auth/logout:
+    post:
+      summary: User logout
+      responses:
+        '204':
+          description: Successful logout
+components:
+  schemas:
+    TokenPair:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+    LoginRequest:
+      type: object
+      properties:
+        username:
+          type: string
+        password:
+          type: string

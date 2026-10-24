@@ -1,0 +1,94 @@
+# WBS-GMM-EP-001: Authentication and Auditing Foundation
+
+## Overview
+This WBS breaks down the implementation of the Authentication and Auditing Foundation (GMM-EP-001), covering JWT management, session handling, rate limiting, and the immutable audit log schema/service.
+
+## Contracts
+| ID | Kind | Path |
+|---|---|---|
+| AUTH-API | openapi | contracts/openapi/auth.yaml |
+| AUDIT-SCHEMA | schema_plan | contracts/schema/audit-log-plan.md |
+
+## Items
+
+### 1. Core JWT Utilities
+- **ID**: GMM-US-001/005
+- **Role**: developer
+- **Title**: Implement JWT generation and validation utility
+- **Paths**: `app/auth/jwt.util.ts`
+- **Contracts**: []
+- **AC**: 
+    - AC-JWT-01: Generate valid access tokens (15m TTL)
+    - AC-JWT-02: Generate valid refresh tokens (7d TTL)
+    - AC-JWT-03: Verify JWT signature and expiration
+    - AC-JWT-04: Return decoded payload on valid JWT
+- **Depends On**: []
+
+### 2. Authentication Service
+- **ID**: GMM-US-001
+- **Role**: developer
+- **Title**: Implement Authentication Service logic
+- **Paths**: `app/auth/auth.service.ts`
+- **Contracts**: []
+- **AC**: 
+    - AC-AUTH-01: Verify user credentials (mocked/assumed)
+    - AC-AUTH-02: Coordinate token pair generation
+- **Depends On**: [GMM-US-001/005]
+
+### 3. Authentication Controller & Endpoints
+- **ID**: GMM-US-002/003/004/006
+- **Role**: developer
+- **Title**: Expose Auth Endpoints (Login, Refresh, Logout)
+- **Paths**: 
+    - `app/auth/auth.controller.ts`
+- **Contracts**: [AUTH-API]
+- **AC**: 
+    - AC-API-01: POST /api/v1/auth/login (200 + httpOnly cookies)
+    - AC-API-02: POST /api/v1/auth/refresh (200 + new TokenPair)
+    - AC-API-03: POST /api/v1/auth/logout (Invalidate session)
+    - AC-API-04: Invalid credentials return 401
+    - AC-API-05: Expired refresh token returns 403
+- **Depends On**: [GMM-US-001/005, GMM-US-001]
+
+### 4. Authentication Middleware
+- **ID**: GMM-US-006
+- **Role**: developer
+- **Title**: Implement Authentication Middleware
+- **Paths**: `app/auth/auth.middleware.ts`
+- **Contracts**: []
+- **AC**: 
+    - AC-MID-01: Validate token via utility
+    - AC-MID-02: Attach User to request context
+    - AC-MID-03: Handle 401 Unauthorized
+- **Depends On**: [GMM-US-001/005]
+
+### 5. Rate Limiting
+- **ID**: GMM-EP-001-RL
+- **Role**: developer
+- **Title**: Implement IP-based Rate Limiting
+- **Paths**: `app/middleware/rate_limiter.ts`
+- **Contracts**: []
+- **AC**: 
+    - AC-RL-01: Limit login attempts to 10 per minute per IP
+- **Depends On**: []
+
+### 6. Audit Log Foundation
+- **ID**: GMM-US-007/008
+- **Role**: developer
+- **Title**: Implement AuditLog Schema and Immutability
+- **Paths**: 
+    - `app/audit/audit.schema.ts`
+    - `app/audit/audit.service.ts`
+- **Contracts**: [AUDIT-SCHEMA]
+- **AC**: 
+    - AC-AUDIT-01: Implement AuditLog schema (actor_id, timestamp, resource_id, delta)
+    - AC-AUDIT-02: Enforce append-only constraints (DB level/triggers)
+- **Depends On**: []
+
+## Critical Modules
+- `app/auth`
+- `app/audit`
+
+## NFRs
+- **Performance**: Auth API p95 < 300ms
+- **Security**: httpOnly cookies, immutable audit logs, rate limiting
