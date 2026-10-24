@@ -25,6 +25,7 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
     req.user = decoded;
     next();
   } catch (error) {
+    console.error('JWT verification error:', error);
     res.status(401).json({ message: 'Unauthorized' });
   }
 }

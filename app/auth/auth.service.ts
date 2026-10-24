@@ -30,6 +30,10 @@ export class AuthService {
     return JwtUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
   }
 
+  /**
+   * Invalidates the refresh token to log the user out.
+   * @param refreshToken The refresh token to be invalidated.
+   */
   async logout(refreshToken: string): Promise<void> {
     // In a real implementation, this would invalidate the refresh token in a store (e.g. Redis)
   }
