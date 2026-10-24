@@ -14,13 +14,17 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
     return;
   }
 
-  const decoded = JwtUtil.verifyToken(token);
+  try {
+    const decoded = JwtUtil.verifyToken(token);
 
-  if (!decoded) {
+    if (!decoded) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+
+    req.user = decoded;
+    next();
+  } catch (error) {
     res.status(401).json({ message: 'Unauthorized' });
-    return;
   }
-
-  req.user = decoded;
-  next();
 }

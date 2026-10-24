@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 const ipCache = new Map<string, { count: number; resetTime: number }>();
-const LIMIT = 10;
+const LIMIT = parseInt(process.env.RATE_LIMIT_THRESHOLD || '10', 10);
 const WINDOW_MS = 60000; // 1 minute
 
 export function rateLimiter(req: Request, res: Response, next: NextFunction): void {
