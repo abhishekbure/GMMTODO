@@ -4,9 +4,9 @@ import { JwtUtil, TokenPair } from './jwt.util';
 
 // Mocking a user database for implementation
 const MOCK_USER = {
-  id: 'user-123',
-  username: 'admin',
-  password: 'password123'
+  id: process.env.MOCK_USER_ID || 'user-123',
+  username: process.env.MOCK_USER_USERNAME || 'admin',
+  password: process.env.MOCK_USER_PASSWORD || 'password123'
 };
 
 export class AuthService {
