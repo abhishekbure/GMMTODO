@@ -81,5 +81,32 @@ myDescribe('JwtUtil', () => {
 
 if (require.main === module) {
   console.log("Running tests via direct execution...");
+  // Explicitly invoke the tests to ensure output is seen in non-interactive shells
+  myDescribe('JwtUtil', () => {
+    const payload = { sub: 'user-123', username: 'admin' };
+
+    myIt('should generate valid access and refresh tokens (GMMTOD-5-AC1)', () => {
+      const tokens = JwtUtil.generateTokenPair(payload);
+      myExpect(tokens.accessToken).toBeDefined();
+      myExpect(tokens.refreshToken).toBeDefined();
+      
+      const decodedAccess = JwtUtil.verifyToken(tokens.accessToken);
+      const decodedRefresh = JwtUtil.verifyToken(tokens.refreshToken);
+      
+      myExpect(decodedAccess?.sub).toBe(payload.sub);
+      myExpect(decodedRefresh?.sub).toBe(payload.sub);
+    });
+
+    myIt('should return valid payload for correct token (GMMTOD-9-AC3)', () => {
+      const tokens = JwtUtil.generateTokenPair(payload);
+      const decoded = JwtUtil.decodeToken(tokens.accessToken);
+      myExpect(decoded?.sub).toBe(payload.sub);
+    });
+
+    myIt('should return null for invalid token (GMMTOD-9-AC1)', () => {
+      const invalidToken = 'not.a.real.token';
+      myExpect(JwtUtil.verifyToken(invalidToken)).toBeNull();
+    });
+  });
 }
 
