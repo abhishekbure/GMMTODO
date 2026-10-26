@@ -14,18 +14,20 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
     return;
   }
 
+  let decoded: any;
   try {
-    const decoded = JwtUtil.verifyToken(token);
-
-    if (!decoded) {
-      res.status(401).json({ message: 'Unauthorized' });
-      return;
-    }
-
-    req.user = decoded;
-    next();
+    decoded = JwtUtil.verifyToken(token);
   } catch (error) {
     console.error('JWT verification error:', error);
     res.status(401).json({ message: 'Unauthorized' });
+    return;
   }
+
+  if (!decoded) {
+    res.status(401).json({ message: 'Unauthorized' });
+    return;
+  }
+
+  req.user = decoded;
+  next();
 }
