@@ -1,4 +1,4 @@
-import { AuditService } from './audit.service';
+import { AuditService } from '../../app/audit/audit.service';
 
 describe('AuditService', () => {
   let auditService: AuditService;
