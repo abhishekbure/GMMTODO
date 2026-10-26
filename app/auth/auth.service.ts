@@ -2,22 +2,19 @@
 import { Request, Response } from 'express';
 import { JwtUtil, TokenPair } from './jwt.util';
 
-// Mocking a user database for implementation
-const MOCK_USER = {
-  id: process.env.MOCK_USER_ID as string,
-  username: process.env.MOCK_USER_USERNAME as string,
-  password: process.env.MOCK_USER_PASSWORD as string
-};
-
 export class AuthService {
   async authenticate(username: string, password: string): Promise<TokenPair | null> {
     // In a real implementation, this would query the database
-    if (!MOCK_USER.id || !MOCK_USER.username || !MOCK_USER.password) {
+    const mockUserId = process.env.MOCK_USER_ID;
+    const mockUsername = process.env.MOCK_USER_USERNAME;
+    const mockPassword = process.env.MOCK_USER_PASSWORD;
+
+    if (!mockUserId || !mockUsername || !mockPassword) {
       throw new Error('MOCK_USER credentials not configured in environment');
     }
 
-    if (username === MOCK_USER.username && password === MOCK_USER.password) {
-      return JwtUtil.generateTokenPair({ sub: MOCK_USER.id, username: MOCK_USER.username });
+    if (username === mockUsername && password === mockPassword) {
+      return JwtUtil.generateTokenPair({ sub: mockUserId, username: mockUsername });
     }
     return null;
   }
