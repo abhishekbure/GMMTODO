@@ -30,11 +30,7 @@ export class JwtUtil {
     if (!this.SECRET) {
       throw new Error('JWT_SECRET environment variable is not set');
     }
-    try {
-      return jwt.verify(token, this.SECRET);
-    } catch (error) {
-      return null;
-    }
+    return jwt.verify(token, this.SECRET);
   }
 
   static decodeToken(token: string): any {
