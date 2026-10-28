@@ -1,5 +1,5 @@
 
-import { rateLimiter } from '../middleware/rate_limiter';
+import { rateLimiter } from './rate_limiter';
 import { config } from '../config/config';
 
 const ipCache = new Map<string, { count: number; resetTime: number }>();
