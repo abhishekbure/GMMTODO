@@ -13,11 +13,16 @@ export class AuthService {
   }
 
   async refresh(refreshToken: string): Promise<TokenPair | null> {
-    const decoded = JwtUtil.verifyToken(refreshToken);
-    if (!decoded) {
+    try {
+      const decoded = JwtUtil.verifyToken(refreshToken);
+      if (!decoded) {
+        return null;
+      }
+      return JwtUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
+    } catch (error) {
+      console.error('Token refresh failed:', error instanceof Error ? error.message : error);
       return null;
     }
-    return JwtUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
   }
 
   /**
