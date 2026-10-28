@@ -1,6 +1,9 @@
-class AuditLogger:
-  def __init__(self, audit_service):
-    self.audit_service = audit_service
+import { AuditService } from './audit.service';
 
-  async def log(self, actor_id, resource_id, event_type, delta):
-    await self.audit_service.log_event(actor_id, resource_id, event_type, delta)
+export class AuditLogger {
+  constructor(private auditService: AuditService) {}
+
+  async log(actorId: string, resourceId: string, eventType: string, delta: any): Promise<void> {
+    await this.auditService.logEvent({ actorId, resourceId, eventType, delta });
+  }
+}
