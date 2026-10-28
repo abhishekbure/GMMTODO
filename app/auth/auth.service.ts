@@ -1,17 +1,13 @@
 
-import { Request, Response } from 'express';
 import { JwtUtil, TokenPair } from './jwt.util';
+import { config } from '../config/config';
 
 export class AuthService {
   async authenticate(username: string, password: string): Promise<TokenPair | null> {
-    const { MOCK_USER_ID, MOCK_USER_USERNAME, MOCK_USER_PASSWORD } = process.env;
+    const { id, username: mockUsername, password: mockPassword } = config.auth.mockUser;
 
-    if (!MOCK_USER_ID || !MOCK_USER_USERNAME || !MOCK_USER_PASSWORD) {
-      throw new Error('MOCK_USER credentials not configured in environment');
-    }
-
-    if (username === MOCK_USER_USERNAME && password === MOCK_USER_PASSWORD) {
-      return JwtUtil.generateTokenPair({ sub: MOCK_USER_ID, username: MOCK_USER_USERNAME });
+    if (username === mockUsername && password === mockPassword) {
+      return JwtUtil.generateTokenPair({ sub: id, username: mockUsername });
     }
     return null;
   }

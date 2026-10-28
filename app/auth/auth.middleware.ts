@@ -1,5 +1,4 @@
 
-import { Request, Response, NextFunction } from 'express';
 import { JwtUtil } from './jwt.util';
 
 export interface AuthenticatedRequest extends Request {
@@ -14,20 +13,16 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
     return;
   }
 
-  let decoded: any;
   try {
-    decoded = JwtUtil.verifyToken(token);
+    const decoded = JwtUtil.verifyToken(token);
+    if (!decoded) {
+      res.status(401).json({ message: 'Unauthorized' });
+      return;
+    }
+    req.user = decoded;
+    next();
   } catch (error) {
     console.error('JWT verification error:', error);
     res.status(401).json({ message: 'Unauthorized' });
-    return;
   }
-
-  if (!decoded) {
-    res.status(401).json({ message: 'Unauthorized' });
-    return;
-  }
-
-  req.user = decoded;
-  next();
 }
