@@ -1,6 +1,6 @@
 
 import { Request, Response, NextFunction } from 'express';
-import { JwtUtil } from './jwt.util';
+import { JsonWebTokenUtil } from './jwt.util';
 
 export interface AuthenticatedRequest extends Request {
   user?: any;
@@ -15,7 +15,7 @@ export function authMiddleware(req: AuthenticatedRequest, res: Response, next: N
   }
 
   try {
-    const decoded = JwtUtil.verifyToken(token);
+    const decoded = JsonWebTokenUtil.verifyToken(token);
     if (!decoded) {
       res.status(401).json({ message: 'Unauthorized' });
       return;

@@ -1,80 +1,69 @@
-# SDD-GMM-EP-001: Authentication and Auditing Foundation
+# Software Design Document (SDD): Authentication and Auditing Foundation
 
 ## 1. Overview
-This document defines the technical architecture for the Authentication and Auditing Foundation (GMM-EP-001). It establishes the security primitives for user sessions and the observability foundation for system mutations.
+This document defines the technical design for the Authentication and Auditing Foundation (GMM-EP-001). This module provides the core security (JWT, Rate Limiting) and observability (Audit Logging) capabilities required by the system.
 
 ## 2. Components
 
-### 2.1 Authentication Module (`app/auth/`)
-- **`jwt.util.ts`**: A stateless utility for signing and verifying JWTs. It manages Access Tokens (15m) and Refresh Tokens (7d).
-- **`auth.service.ts`**: Orchestrates credential verification and token lifecycle management.
-- **`auth.controller.ts`**: Express-based REST endpoints for `/login`, `/refresh`, and `/logout`.
-- **`auth.middleware.ts`**: An Express middleware to protect routes, validate tokens, and populate the request context with user identity.
+### 2.1 Authentication Module
+- **`JsonWebTokenUtil` (`app/auth/jwt.util.ts`)**: High-level wrapper for `jsonwebtoken`. Handles signing, verification, and payload decoding.
+- **`AuthService` (`app/auth/auth.service.ts`)**: Business logic for validating credentials (using `config.auth.mockUser` for this phase), generating token pairs, and managing session state.
+- **`AuthController` (`app/auth/auth.controller.ts`)**: Express endpoints for `login`, `refresh`, and `logout`. Responsible for setting `httpOnly` cookies.
+- **`authMiddleware` (`app/auth/auth.middleware.ts`)**: Middleware that validates the presence and integrity of the access token in cookies, injecting the user object into the `Request`.
 
-### 2.2 Auditing Module (`app/audit/`)
-- **`audit.service.ts`**: The primary service for recording system events.
-- **`audit.schema.ts`**: Defines the data structure for the `AuditLog` entity.
-- **Database Immutability**: Implemented via PostgreSQL permissions and triggers to ensure an append-only log.
+### 2.2 Auditing Module
+- **`AuditLogger` (`app/audit/audit.logger.ts`)**: An abstraction layer to decouple the application from specific logging implementations.
+- **`AuditService` (`app/audit/audit.service.ts`)**: Orchestrates the creation and persistence of audit events.
 
-### 2.3 Security Middleware (`app/middleware/`)
-- **`rate_limiter.ts`**: IP-based rate limiting to mitigate brute-force attacks on the login endpoint.
+### 2.3 Security Infrastructure
+- **`rateLimiter` (`app/middleware/rate_limiter.ts`)**: IP-based rate limiting middleware using an in-memory `Map`.
+- **`config` (`app/config/config.ts`)**: Centralized configuration with environment variable validation.
 
 ## 3. Data Flow
 
 ### 3.1 Authentication Flow (Login)
 1. Client sends `POST /api/v1/auth/login` with credentials.
-2. `auth.controller.ts` calls `auth.service.ts`.
-3. `auth.service.ts` verifies credentials and calls `jwt.util.ts`.
-4. `jwt.util.ts` returns a `TokenPair`.
-5. `auth.controller.ts` sets the Access Token and Refresh Token in `httpOnly` cookies.
-6. Client receives 200 OK.
+2. `AuthController` calls `AuthService.login`.
+3. `AuthService` verifies credentials.
+4. `AuthService` calls `JsonWebTokenUtil` to generate an Access Token (15m) and a Refresh Token (7d).
+5. `AuthController` sets both tokens as `httpOnly` cookies in the response.
+6. `AuditService` records the successful/failed login event.
 
-### 3.2 Authorization Flow (Protected Resource)
-1. Client sends request with JWT in cookie.
-2. `auth.middleware.ts` intercepts request.
-3. `auth.middleware.ts` calls `jwt.util.ts` to validate the signature and expiration.
-4. If valid, the user identity is attached to `req.user`.
-5. If invalid/expired, 401 Unauthorized is returned.
-
-### 3.3 Audit Flow (System Mutation)
-1. Any service performing a mutation calls `audit.service.logEvent()`.
-2. The event (actor, resource, delta, timestamp) is persisted to the `AuditLog` table.
-3. Database triggers prevent any `UPDATE` or `DELETE` on this table.
+### 3.2 Protected Resource Access
+1. Client sends request with cookie.
+2. `authMiddleware` intercepts request.
+3. `authMiddleware` calls `JsonWebTokenUtil.verify`.
+4. If valid, `user` context is added to `req`.
+5. If invalid/missing, returns `401 Unauthorized`.
 
 ## 4. NFR Tactics
 
 ### 4.1 Security
-- **Tactic**: Token Storage. Use `httpOnly` and `Secure` flags for cookies to mitigate XSS.
-- **Tactic**: Brute-force mitigation. Implement IP-based rate limiting (10 req/min) on auth endpoints.
-- **Tactic**: Data Integrity. Use database triggers to enforce an immutable, append-only audit trail.
+- **Tactic: Mitigation of XSS via `httpOnly` Cookies.** 
+  - Tokens are never accessible to client-side JavaScript.
+- **Tactic: Mitigation of Brute Force via Rate Limiting.** 
+  - `rateLimiter` restricts attempts to 10 per minute per IP.
+- **Tactic: Principle of Least Privilege (Tokens).**
+  - Short-lived access tokens (15m) minimize the window of opportunity for stolen tokens.
 
-### 4.2 Performance Efficiency
-- **Tactic**: Latency. Ensure JWT validation and token issuance (p95) occurs within < 300ms.
+### 4.2 Reliability
+- **Tactic: Fail-fast Configuration.**
+  - `app/config/config.ts` throws errors on startup if critical environment variables (e.g., `JWT_SECRET`) are missing.
 
-### 4.3 Reliability
-- **Tactic**: Session Management. Implement Refresh Token rotation to minimize the impact of stolen access tokens.
+### 4.3 Maintainability
+- **Tactic: Centralized Configuration.**
+  - All environment-dependent values are managed through a single `config` object.
 
 ## 5. Operability Design
 
-### 5.1 Auth Endpoints
-- **SLIs**: 
-    - Availability: Success rate of `/login` and `/refresh` endpoints.
-    - Latency: p95 latency of `/login` < 300ms.
-- **Logs**: 
-    - `AUTH_LOGIN_SUCCESS`: User ID, IP.
-    - `AUTH_LOGIN_FAILURE`: Attempted username, IP, Reason (invalid credentials/rate-limited).
-    - `AUTH_TOKEN_REFRESH`: User ID.
-- **Alerts**: 
-    - High rate of `AUTH_LOGIN_FAILURE` from a single IP (potential brute force).
-    - Spike in 401/403 responses (potential token expiration/invalidation issue).
-- **Rollback**: Revert deployment to the previous stable container image.
+### 5.1 Rate Limiter
+- **SLI**: Success rate of requests under rate limit vs. blocked requests.
+- **Logs**: `rate_limit_exceeded` event (IP, timestamp).
+- **Alerts**: High rate of `429 Too Many Requests` from a single IP.
+- **Rollback**: Disable via config if misconfigured.
 
 ### 5.2 Audit Service
-- **SLIs**: 
-    - Durability: Successful writes to the `AuditLog` table.
-- **Logs**: 
-    - `AUDIT_WRITE_SUCCESS`: Event type, resource ID.
-    - `AUDIT_WRITE_FAILURE`: Error details (database connection issues).
-- **Alerts**: 
-    - `AUDIT_WRITE_FAILURE` count > 0 (critical loss of observability).
-- **Rollback**: Revert deployment to previous stable container image.
+- **SLI**: Audit event latency (time from event occurrence to log persistence).
+- **Logs**: `audit_event_recorded` (event_type, user_id, timestamp).
+- **Alerts**: Audit log service failure (critical).
+- **Rollback**: Switch to fallback console logger if DB is unavailable.
