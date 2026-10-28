@@ -40,16 +40,14 @@ export class AuthController {
       return;
     }
 
-    const tokens = await this.authService.refresh(refreshToken);
-
-    if (!tokens) {
+    try {
+      const tokens = await this.authService.refresh(refreshToken);
+      res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+      res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+      res.status(200).json(tokens);
+    } catch (error) {
       res.status(403).json({ message: 'Forbidden' });
-      return;
     }
-
-    res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
-    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
-    res.status(200).json(tokens);
   }
 
   async logout(req: Request, res: Response): Promise<void> {

@@ -10,7 +10,13 @@ export const config = {
     },
   },
   rateLimit: {
-    threshold: parseInt(process.env.RATE_LIMIT_THRESHOLD as string, 10) || 10,
+    threshold: (() => {
+      const val = process.env.RATE_LIMIT_THRESHOLD;
+      if (val === undefined || isNaN(parseInt(val, 10))) {
+        throw new Error('RATE_LIMIT_THRESHOLD environment variable is not a valid number');
+      }
+      return parseInt(val, 10);
+    })(),
     windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS as string, 10) || 60000,
   },
 };

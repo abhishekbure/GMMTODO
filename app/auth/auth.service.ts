@@ -12,17 +12,16 @@ export class AuthService {
     return null;
   }
 
-  async refresh(refreshToken: string): Promise<TokenPair | null> {
+  async refresh(refreshToken: string): Promise<TokenPair> {
     try {
       const decoded = JsonWebTokenUtil.verifyToken(refreshToken);
       if (!decoded) {
-        console.warn('Token refresh failed: Invalid token payload');
-        return null;
+        throw new Error('Invalid token payload');
       }
       return JsonWebTokenUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
     } catch (error) {
       console.error('Token refresh failed:', error instanceof Error ? error.message : error);
-      return null;
+      throw error;
     }
   }
 
