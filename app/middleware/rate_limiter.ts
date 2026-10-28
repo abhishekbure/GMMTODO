@@ -2,7 +2,7 @@
 import { Request, Response, NextFunction } from 'express';
 
 const ipCache = new Map<string, { count: number; resetTime: number }>();
-const LIMIT = parseInt(process.env.RATE_LIMIT_THRESHOLD as string, 10);
+const LIMIT = parseInt(process.env.RATE_LIMIT_THRESHOLD || '10', 10);
 if (isNaN(LIMIT)) {
   throw new Error('RATE_LIMIT_THRESHOLD environment variable is required');
 }
