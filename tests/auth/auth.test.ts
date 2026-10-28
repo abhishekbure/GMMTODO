@@ -31,6 +31,24 @@ describe('JwtUtil', () => {
       expect(decodedAccess.sub).toBe(payload.sub);
       expect(decodedRefresh.sub).toBe(payload.sub);
     });
+
+    it('should have correct expiration for access token (GMMTOD-5-AC2)', () => {
+        const tokens = JwtUtil.generateTokenPair(payload);
+        const decoded = JwtUtil.decodeToken(tokens.accessToken);
+        const now = Math.floor(Date.now() / 1000);
+        // 15 minutes = 900 seconds. We check it's within a reasonable window.
+        expect(decoded.exp).toBeGreaterThan(now);
+        expect(decoded.exp).toBeLessThanOrEqual(now + 900 + 10); 
+    });
+
+    it('should have correct expiration for refresh token (GMMTOD-5-AC3)', () => {
+        const tokens = JwtUtil.generateTokenPair(payload);
+        const decoded = JwtUtil.decodeToken(tokens.refreshToken);
+        const now = Math.floor(Date.now() / 1000);
+        // 7 days = 604800 seconds.
+        expect(decoded.exp).toBeGreaterThan(now);
+        expect(decoded.exp).toBeLessThanOrEqual(now + 604800 + 10);
+    });
   });
 
   describe('verifyToken', () => {
@@ -40,7 +58,7 @@ describe('JwtUtil', () => {
       expect(decoded.sub).toBe(payload.sub);
     });
 
-    it('should return null/throw for invalid token (GMMTOD-9-AC1)', () => {
+    it('should throw error for invalid token (GMMTOD-9-AC1)', () => {
       const invalidToken = 'not.a.real.token';
       expect(() => JwtUtil.verifyToken(invalidToken)).toThrow();
     });
