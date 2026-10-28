@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { rateLimiter } from '../middleware/rate_limiter';
+import { TokenPair } from './jwt.util';
 
 export class AuthController {
   private authService = new AuthService();

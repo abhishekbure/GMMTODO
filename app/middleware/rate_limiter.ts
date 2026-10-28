@@ -1,15 +1,13 @@
 
-import { Request, Response, NextFunction } from 'express';
+import { rateLimiter } from '../middleware/rate_limiter';
+import { config } from '../config/config';
 
 const ipCache = new Map<string, { count: number; resetTime: number }>();
-const LIMIT = parseInt(process.env.RATE_LIMIT_THRESHOLD as string, 10);
-if (isNaN(LIMIT)) {
-  throw new Error('RATE_LIMIT_THRESHOLD environment variable is required');
-}
-const WINDOW_MS = parseInt(process.env.RATE_LIMIT_WINDOW_MS as string, 10) || 60000;
+const LIMIT = config.rateLimit.threshold;
+const WINDOW_MS = config.rateLimit.windowMs;
 
-export function rateLimiter(req: Request, res: Response, next: NextFunction): void {
-  const ip = req.ip || (req as any).connection.remoteAddress || 'unknown';
+export function rateLimiter(req: any, res: any, next: any): void {
+  const ip = req.ip || req.connection.remoteAddress || 'unknown';
   const now = Date.now();
   
   const record = ipCache.get(ip);

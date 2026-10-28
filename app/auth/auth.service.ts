@@ -1,5 +1,5 @@
 
-import { JwtUtil, TokenPair } from './jwt.util';
+import { JsonWebTokenUtil, TokenPair } from './jwt.util';
 import { config } from '../config/config';
 
 export class AuthService {
@@ -7,18 +7,19 @@ export class AuthService {
     const { id, username: mockUsername, password: mockPassword } = config.auth.mockUser;
 
     if (username === mockUsername && password === mockPassword) {
-      return JwtUtil.generateTokenPair({ sub: id, username: mockUsername });
+      return JsonWebTokenUtil.generateTokenPair({ sub: id, username: mockUsername });
     }
     return null;
   }
 
   async refresh(refreshToken: string): Promise<TokenPair | null> {
     try {
-      const decoded = JwtUtil.verifyToken(refreshToken);
+      const decoded = JsonWebTokenUtil.verifyToken(refreshToken);
       if (!decoded) {
+        console.warn('Token refresh failed: Invalid token payload');
         return null;
       }
-      return JwtUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
+      return JsonWebTokenUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
     } catch (error) {
       console.error('Token refresh failed:', error instanceof Error ? error.message : error);
       return null;
