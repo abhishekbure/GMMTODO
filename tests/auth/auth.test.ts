@@ -62,6 +62,13 @@ describe('JwtUtil', () => {
       const invalidToken = 'not.a.real.token';
       expect(() => JwtUtil.verifyToken(invalidToken)).toThrow();
     });
+
+    it('should throw error if JWT_SECRET is missing (GMMTOD-9-AC2)', () => {
+      const originalSecret = process.env.JWT_SECRET;
+      delete process.env.JWT_SECRET;
+      expect(() => JwtUtil.verifyToken('some-token')).toThrow('JWT_SECRET environment variable is not set');
+      process.env.JWT_SECRET = originalSecret;
+    });
   });
 
   describe('decodeToken', () => {
