@@ -1,6 +1,7 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { JsonWebTokenUtil } from './jwt.util';
+import { rateLimiter } from '../middleware/rate_limiter';
 
 export interface AuthenticatedRequest extends Request {
   user?: any;

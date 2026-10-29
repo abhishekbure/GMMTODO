@@ -16,11 +16,14 @@ export class AuthService {
     try {
       const decoded = JsonWebTokenUtil.verifyToken(refreshToken);
       if (!decoded) {
-        throw new Error('Invalid token payload');
+        const error = new Error('Invalid token payload');
+        console.error('Token refresh failed: Invalid payload');
+        throw error;
       }
       return JsonWebTokenUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
     } catch (error) {
-      console.error('Token refresh failed:', error instanceof Error ? error.message : error);
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      console.error(`Token refresh failed: ${message}`);
       throw error;
     }
   }
