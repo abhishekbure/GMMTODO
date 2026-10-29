@@ -1,40 +1,45 @@
 import { Request, Response } from 'express';
 import { AuthService } from './auth.service';
 import { TokenPair } from './jwt.util';
+import { rateLimiter } from '../middleware/rate_limiter';
 
 export class AuthController {
   private authService = new AuthService();
 
   async login(req: Request, res: Response): Promise<void> {
-    const { username, password } = req.body;
-    const tokens = await this.authService.authenticate(username, password);
+    rateLimiter(req, res, async () => {
+      const { username, password } = req.body;
+      const tokens = await this.authService.authenticate(username, password);
 
-    if (!tokens) {
-      res.status(401).json({ message: 'Invalid credentials' });
-      return;
-    }
+      if (!tokens) {
+        res.status(401).json({ message: 'Invalid credentials' });
+        return;
+      }
 
-    res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
-    res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
-    res.status(200).json(tokens);
-  }
-
-  async refresh(req: Request, res: Response): Promise<void> {
-    const refreshToken = req.cookies?.refreshToken;
-
-    if (!refreshToken) {
-      res.status(403).json({ message: 'Forbidden' });
-      return;
-    }
-
-    try {
-      const tokens = await this.authService.refresh(refreshToken);
       res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
       res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
       res.status(200).json(tokens);
-    } catch (error) {
-      res.status(403).json({ message: 'Forbidden' });
-    }
+    } as any);
+  }
+
+  async refresh(req: Request, res: Response): Promise<void> {
+    rateLimiter(req, res, async () => {
+      const refreshToken = req.cookies?.refreshToken;
+
+      if (!refreshToken) {
+        res.status(403).json({ message: 'Forbidden' });
+        return;
+      }
+
+      try {
+        const tokens = await this.authService.refresh(refreshToken);
+        res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+        res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
+        res.status(200).json(tokens);
+      } catch (error) {
+        res.status(403).json({ message: 'Forbidden' });
+      }
+    } as any);
   }
 
   async logout(req: Request, res: Response): Promise<void> {
