@@ -8,8 +8,8 @@
     "test": "tests"
   },
   "scripts": {
-    "test": "node node_modules/jest/bin/jest.js",
-    "test:coverage": "node node_modules/jest/bin/jest.js --coverage",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
     "start": "ts-node app/index.ts"
   },
   "keywords": [],
