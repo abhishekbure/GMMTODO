@@ -36,7 +36,7 @@ describe('Auth Integration Tests', () => {
       expect(res.body).toHaveProperty('refreshToken');
       
       // Check cookies
-      const cookies = res.headers['set-cookie'] as string[];
+      const cookies = (res.headers['set-cookie'] as unknown) as string[];
       expect(cookies).toBeDefined();
       expect(cookies.some(c => c.includes('accessToken'))).toBe(true);
       expect(cookies.some(c => c.includes('refreshToken'))).toBe(true);
@@ -59,7 +59,7 @@ describe('Auth Integration Tests', () => {
         .post('/api/v1/auth/login')
         .send({ username: mockUser.username, password: mockUser.password });
       
-      const cookies = loginRes.headers['set-cookie'] as string[];
+      const cookies = (loginRes.headers['set-cookie'] as unknown) as string[];
       const refreshTokenCookie = cookies.find(c => c.includes('refreshToken'));
       const refreshToken = refreshTokenCookie?.split(';')[0].split('=')[1];
       expect(refreshToken).toBeDefined();
@@ -86,7 +86,7 @@ describe('Auth Integration Tests', () => {
         .post('/api/v1/auth/login')
         .send({ username: mockUser.username, password: mockUser.password });
       
-      const cookies = loginRes.headers['set-cookie'] as string[];
+      const cookies = (loginRes.headers['set-cookie'] as unknown) as string[];
 
       const res = await request(app)
         .post('/api/v1/auth/logout')
