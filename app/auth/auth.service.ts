@@ -15,15 +15,18 @@ export class AuthService {
   async refresh(refreshToken: string): Promise<TokenPair> {
     try {
       const decoded = JsonWebTokenUtil.verifyToken(refreshToken);
-      if (!decoded) {
-        const error = new Error('Invalid token payload');
-        console.error('Token refresh failed: Invalid payload');
-        throw error;
-      }
       return JsonWebTokenUtil.generateTokenPair({ sub: decoded.sub, username: decoded.username });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unknown error';
-      console.error(`Token refresh failed: ${message}`);
+      const errorName = (error as any).name;
+
+      if (errorName === 'TokenExpiredError') {
+        console.error(`Token refresh failed: Token expired - ${message}`);
+      } else if (errorName === 'JsonWebTokenError') {
+        console.error(`Token refresh failed: Invalid JWT - ${message}`);
+      } else {
+        console.error(`Token refresh failed: ${message}`);
+      }
       throw error;
     }
   }
