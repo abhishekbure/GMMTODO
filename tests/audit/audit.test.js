@@ -1,0 +1,24 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+const audit_service_1 = require("../../app/audit/audit.service");
+describe('AuditService', () => {
+    let auditService;
+    let consoleSpy;
+    beforeEach(() => {
+        auditService = new audit_service_1.AuditService();
+        consoleSpy = jest.spyOn(console, 'log').mockImplementation();
+    });
+    afterEach(() => {
+        consoleSpy.mockRestore();
+    });
+    it('should log an audit event with sanitized delta', async () => {
+        const event = {
+            actorId: 'user-1',
+            resourceId: 'res-1',
+            eventType: 'UPDATE',
+            delta: { key: 'value' }
+        };
+        await auditService.logEvent(event);
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('[AUDIT] UPDATE by user-1 on res-1:'), event.delta);
+    });
+});
