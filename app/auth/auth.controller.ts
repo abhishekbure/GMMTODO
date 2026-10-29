@@ -7,8 +7,10 @@ export class AuthController {
   private authService = new AuthService();
 
   async login(req: Request, res: Response): Promise<void> {
+    const username = req.body.username;
+    const password = req.body.password;
+
     rateLimiter(req, res, async () => {
-      const { username, password } = req.body;
       const tokens = await this.authService.authenticate(username, password);
 
       if (!tokens) {
@@ -19,18 +21,18 @@ export class AuthController {
       res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
       res.cookie('refreshToken', tokens.refreshToken, { httpOnly: true, secure: true, sameSite: 'strict' });
       res.status(200).json(tokens);
-    } as any);
+    });
   }
 
   async refresh(req: Request, res: Response): Promise<void> {
+    const refreshToken = req.cookies?.refreshToken;
+
+    if (!refreshToken) {
+      res.status(403).json({ message: 'Forbidden' });
+      return;
+    }
+
     rateLimiter(req, res, async () => {
-      const refreshToken = req.cookies?.refreshToken;
-
-      if (!refreshToken) {
-        res.status(403).json({ message: 'Forbidden' });
-        return;
-      }
-
       try {
         const tokens = await this.authService.refresh(refreshToken);
         res.cookie('accessToken', tokens.accessToken, { httpOnly: true, secure: true, sameSite: 'strict' });
@@ -39,7 +41,7 @@ export class AuthController {
       } catch (error) {
         res.status(403).json({ message: 'Forbidden' });
       }
-    } as any);
+    });
   }
 
   async logout(req: Request, res: Response): Promise<void> {
